@@ -14,6 +14,10 @@
 
 import pathlib
 
+import geopandas as gpd
+import pandas as pd
+from shapely.geometry import Point
+
 
 DATA_DIR = pathlib.Path(__file__).parent.parent / 'data'
 
@@ -30,6 +34,29 @@ HOURLY_COLUMNS = [
 ]
 
 
+# --- Private helpers ---
+
+def _load_hourly(date_str):
+    """Read all 24 HourlyData_*.dat files for a date and return a combined DataFrame."""
+    raw_dir = DATA_DIR / 'raw' / date_str
+    files = sorted(raw_dir.glob('HourlyData_*.dat'))
+    frames = [
+        pd.read_csv(f, sep='|', header=None, names=HOURLY_COLUMNS, encoding='latin-1')
+        for f in files
+    ]
+    return pd.concat(frames, ignore_index=True)
+
+
+def _load_site_locations():
+    """Read Monitoring_Site_Locations_V2.dat from the most recent date and deduplicate by AQSID."""
+    raw_dir = DATA_DIR / 'raw'
+    date_dirs = sorted(d for d in raw_dir.iterdir() if d.is_dir())
+    most_recent = date_dirs[-1]
+    df = pd.read_csv(most_recent / 'Monitoring_Site_Locations_V2.dat', sep='|', header=0)
+    df = df.drop_duplicates(subset='AQSID', keep='first')
+    return df
+
+
 # --- Hourly observation data ---
 
 def prepare_hourly_csv(date_str):
@@ -42,7 +69,10 @@ def prepare_hourly_csv(date_str):
     Args:
         date_str: Date string in 'YYYY-MM-DD' format.
     """
-    raise NotImplementedError("Implement this function.")
+    out_path = DATA_DIR / 'prepared' / 'hourly' / f'{date_str}.csv'
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    df = _load_hourly(date_str)
+    df.to_csv(out_path, index=False)
 
 
 def prepare_hourly_jsonl(date_str):
@@ -55,7 +85,10 @@ def prepare_hourly_jsonl(date_str):
     Args:
         date_str: Date string in 'YYYY-MM-DD' format.
     """
-    raise NotImplementedError("Implement this function.")
+    out_path = DATA_DIR / 'prepared' / 'hourly' / f'{date_str}.jsonl'
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    df = _load_hourly(date_str)
+    df.to_json(out_path, orient='records', lines=True)
 
 
 def prepare_hourly_parquet(date_str):
@@ -67,7 +100,10 @@ def prepare_hourly_parquet(date_str):
     Args:
         date_str: Date string in 'YYYY-MM-DD' format.
     """
-    raise NotImplementedError("Implement this function.")
+    out_path = DATA_DIR / 'prepared' / 'hourly' / f'{date_str}.parquet'
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    df = _load_hourly(date_str)
+    df.to_parquet(out_path, index=False)
 
 
 # --- Site location data ---
@@ -82,7 +118,10 @@ def prepare_site_locations_csv():
 
     Use the most recent date's file from data/raw/.
     """
-    raise NotImplementedError("Implement this function.")
+    out_path = DATA_DIR / 'prepared' / 'sites' / 'site_locations.csv'
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    df = _load_site_locations()
+    df.to_csv(out_path, index=False)
 
 
 def prepare_site_locations_jsonl():
@@ -95,7 +134,10 @@ def prepare_site_locations_jsonl():
 
     Use the most recent date's file from data/raw/.
     """
-    raise NotImplementedError("Implement this function.")
+    out_path = DATA_DIR / 'prepared' / 'sites' / 'site_locations.jsonl'
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    df = _load_site_locations()
+    df.to_json(out_path, orient='records', lines=True)
 
 
 def prepare_site_locations_geoparquet():
@@ -109,7 +151,15 @@ def prepare_site_locations_geoparquet():
 
     Use the most recent date's file from data/raw/.
     """
-    raise NotImplementedError("Implement this function.")
+    out_path = DATA_DIR / 'prepared' / 'sites' / 'site_locations.geoparquet'
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    df = _load_site_locations()
+    geometry = [
+        Point(lon, lat)
+        for lon, lat in zip(df['Longitude'], df['Latitude'])
+    ]
+    gdf = gpd.GeoDataFrame(df, geometry=geometry, crs='EPSG:4326')
+    gdf.to_parquet(out_path, index=False)
 
 
 if __name__ == '__main__':

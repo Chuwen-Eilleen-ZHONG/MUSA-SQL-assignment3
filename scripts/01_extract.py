@@ -13,6 +13,7 @@
 """
 
 import pathlib
+import urllib.request
 
 
 DATA_DIR = pathlib.Path(__file__).parent.parent / 'data'
@@ -28,8 +29,32 @@ def download_data_for_date(date_str):
     Args:
         date_str: Date string in 'YYYY-MM-DD' format. For example, '2024-07-01'.
     """
-    raise NotImplementedError("Implement this function to download AirNow data files.")
+    date_compact = date_str.replace('-', '')
+    year = date_str[:4]
 
+    save_dir = DATA_DIR / 'raw' / date_str
+    save_dir.mkdir(parents=True, exist_ok=True)
+
+    for hour in range(24):
+        hour_str = f'{hour:02d}'
+        filename = f'HourlyData_{date_compact}{hour_str}.dat'
+        url = f'https://s3-us-west-1.amazonaws.com/files.airnowtech.org/airnow/{year}/{date_compact}/{filename}'
+        save_path = save_dir / filename
+
+        if save_path.exists():
+            print(f'  Already exists, skipping: {filename}')
+            continue
+
+        print(f'  Downloading: {filename}')
+        urllib.request.urlretrieve(url, save_path)
+
+    filename = 'Monitoring_Site_Locations_V2.dat'
+    url = f'https://s3-us-west-1.amazonaws.com/files.airnowtech.org/airnow/{year}/{date_compact}/{filename}'
+    save_path = save_dir / filename
+
+    if not save_path.exists():
+        print(f'  Downloading: {filename}')
+        urllib.request.urlretrieve(url, save_path)
 
 if __name__ == '__main__':
     import datetime

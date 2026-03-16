@@ -14,11 +14,14 @@
 
 import pathlib
 
+from google.cloud import storage
+
 
 DATA_DIR = pathlib.Path(__file__).parent.parent / 'data'
 
-# TODO: Update this to your bucket name
-BUCKET_NAME = 'musa5090-s26-yourname-data'
+BUCKET_NAME = 'musa5090-s26-chuwen-data'
+
+EXTENSIONS = ('csv', 'jsonl', 'geoparquet')
 
 
 def upload_merged_data():
@@ -29,7 +32,26 @@ def upload_merged_data():
         gs://<bucket>/air_quality/hourly_with_sites/jsonl/airnow_date=2024-07-01/data.jsonl
         gs://<bucket>/air_quality/hourly_with_sites/geoparquet/airnow_date=2024-07-01/data.geoparquet
     """
-    raise NotImplementedError("Implement this function to upload merged data to GCS.")
+    client = storage.Client()
+    bucket = client.bucket(BUCKET_NAME)
+
+    hourly_with_sites_dir = DATA_DIR / 'prepared' / 'hourly_with_sites'
+
+    date_stems = set()
+    for ext in EXTENSIONS:
+        for f in hourly_with_sites_dir.glob(f'*.{ext}'):
+            date_stems.add(f.stem)
+
+    for date_stem in sorted(date_stems):
+        for ext in EXTENSIONS:
+            local_file = hourly_with_sites_dir / f'{date_stem}.{ext}'
+            if not local_file.exists():
+                continue
+
+            blob_name = f'air_quality/hourly_with_sites/{ext}/airnow_date={date_stem}/data.{ext}'
+            blob = bucket.blob(blob_name)
+            blob.upload_from_filename(str(local_file))
+            print(f'Uploaded {local_file.name} → gs://{BUCKET_NAME}/{blob_name}')
 
 
 if __name__ == '__main__':

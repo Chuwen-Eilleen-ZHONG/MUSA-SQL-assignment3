@@ -15,11 +15,14 @@
 
 import pathlib
 
+from google.cloud import storage
+from google.cloud.exceptions import Conflict
+
 
 DATA_DIR = pathlib.Path(__file__).parent.parent / 'data'
 
-# TODO: Update this to your bucket name
-BUCKET_NAME = 'musa5090-s26-yourname-data'
+BUCKET_NAME = 'musa5090-s26-chuwen-data'
+PROJECT_ID = 'sql-project1-487819'
 
 
 def upload_prepared_data():
@@ -37,7 +40,31 @@ def upload_prepared_data():
         gs://<bucket>/air_quality/sites/site_locations.jsonl
         gs://<bucket>/air_quality/sites/site_locations.geoparquet
     """
-    raise NotImplementedError("Implement this function to upload files to GCS.")
+    client = storage.Client(project=PROJECT_ID)
+
+    # Create the bucket if it doesn't exist
+    bucket = client.bucket(BUCKET_NAME)
+    try:
+        bucket = client.create_bucket(bucket, project=PROJECT_ID)
+        print(f'Created bucket {BUCKET_NAME}')
+    except Conflict:
+        bucket = client.get_bucket(BUCKET_NAME)
+        print(f'Bucket {BUCKET_NAME} already exists')
+
+    # Upload hourly and sites folders
+    prepared_dir = DATA_DIR / 'prepared'
+    for subfolder in ('hourly', 'sites'):
+        local_dir = prepared_dir / subfolder
+        if not local_dir.exists():
+            print(f'Directory {local_dir} does not exist, skipping.')
+            continue
+        for local_file in local_dir.iterdir():
+            if not local_file.is_file():
+                continue
+            blob_name = f'air_quality/{subfolder}/{local_file.name}'
+            blob = bucket.blob(blob_name)
+            blob.upload_from_filename(str(local_file))
+            print(f'Uploaded {local_file} to gs://{BUCKET_NAME}/{blob_name}')
 
 
 if __name__ == '__main__':

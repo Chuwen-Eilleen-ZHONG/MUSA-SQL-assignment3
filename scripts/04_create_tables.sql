@@ -43,3 +43,58 @@
 -- to get latitude/longitude for each observation. For example,
 -- find the average PM2.5 value by state for a single day.
 
+CREATE EXTERNAL TABLE `sql-project1-487819.air_quality.hourly_observations_csv`
+OPTIONS (
+  format = 'CSV',
+  uris = ['gs://musa5090-s26-chuwen-data/air_quality/hourly/*.csv'],
+  skip_leading_rows = 1
+);
+
+CREATE EXTERNAL TABLE `sql-project1-487819.air_quality.hourly_observations_jsonl`
+OPTIONS (
+  format = 'NEWLINE_DELIMITED_JSON',
+  uris = ['gs://musa5090-s26-chuwen-data/air_quality/hourly/*.jsonl']
+);
+
+CREATE EXTERNAL TABLE `sql-project1-487819.air_quality.hourly_observations_parquet`
+OPTIONS (
+  format = 'PARQUET',
+  uris = ['gs://musa5090-s26-chuwen-data/air_quality/hourly/*.parquet']
+);
+
+CREATE EXTERNAL TABLE `sql-project1-487819.air_quality.site_locations_csv`
+OPTIONS (
+  format = 'CSV',
+  uris = ['gs://musa5090-s26-chuwen-data/air_quality/sites/site_locations.csv'],
+  skip_leading_rows = 1
+);
+
+CREATE EXTERNAL TABLE `sql-project1-487819.air_quality.site_locations_jsonl`
+OPTIONS (
+  format = 'NEWLINE_DELIMITED_JSON',
+  uris = ['gs://musa5090-s26-chuwen-data/air_quality/sites/site_locations.jsonl']
+);
+
+CREATE EXTERNAL TABLE `sql-project1-487819.air_quality.site_locations_geoparquet`
+OPTIONS (
+  format = 'PARQUET',
+  uris = ['gs://musa5090-s26-chuwen-data/air_quality/sites/site_locations.geoparquet']
+);
+
+SELECT 
+    o.valid_date,
+    o.valid_time,
+    o.site_name,
+    o.parameter_name,
+    o.value,
+    o.reporting_units,
+    s.Latitude,
+    s.Longitude,
+    s.StateAbbreviation
+FROM `sql-project1-487819.air_quality.hourly_observations_csv` o
+JOIN `sql-project1-487819.air_quality.site_locations_csv` s
+    ON o.aqsid = s.AQSID
+WHERE o.parameter_name = 'PM2.5'
+    AND o.valid_date = '2024-07-01'
+ORDER BY s.StateAbbreviation, o.value DESC
+LIMIT 100;

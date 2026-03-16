@@ -27,3 +27,27 @@
 -- pointing to gs://<your-bucket>/air_quality/hourly/parquet/*
 -- with hive partitioning options
 
+CREATE EXTERNAL TABLE `sql-project1-487819.air_quality.hourly_observations_csv_partitioned`
+WITH PARTITION COLUMNS (airnow_date DATE)
+OPTIONS (
+  format = 'CSV',
+  uris = ['gs://musa5090-s26-chuwen-data/air_quality/hourly/csv/*'],
+  skip_leading_rows = 1,
+  hive_partition_uri_prefix = 'gs://musa5090-s26-chuwen-data/air_quality/hourly/csv'
+);
+
+CREATE EXTERNAL TABLE `sql-project1-487819.air_quality.hourly_observations_jsonl_partitioned`
+WITH PARTITION COLUMNS (airnow_date DATE)
+OPTIONS (
+  format = 'NEWLINE_DELIMITED_JSON',
+  uris = ['gs://musa5090-s26-chuwen-data/air_quality/hourly/jsonl/*'],
+  hive_partition_uri_prefix = 'gs://musa5090-s26-chuwen-data/air_quality/hourly/jsonl'
+);
+
+CREATE EXTERNAL TABLE `sql-project1-487819.air_quality.hourly_observations_parquet_partitioned`
+WITH PARTITION COLUMNS (airnow_date DATE)
+OPTIONS (
+  format = 'PARQUET',
+  uris = ['gs://musa5090-s26-chuwen-data/air_quality/hourly/parquet/*'],
+  hive_partition_uri_prefix = 'gs://musa5090-s26-chuwen-data/air_quality/hourly/parquet'
+);

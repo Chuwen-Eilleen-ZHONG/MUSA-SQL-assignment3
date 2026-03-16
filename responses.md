@@ -171,14 +171,36 @@ If you implemented the stretch challenge (scripts `06_prepare`, `06_upload_to_gc
 
 ```sql
 -- Merged Hourly + Sites — CSV (hive-partitioned)
+CREATE EXTERNAL TABLE `sql-project1-487819.air_quality.hourly_with_sites_csv`
+WITH PARTITION COLUMNS (airnow_date DATE)
+OPTIONS (
+  format = 'CSV',
+  uris = ['gs://musa5090-s26-chuwen-data/air_quality/hourly_with_sites/csv/*'],
+  skip_leading_rows = 1,
+  hive_partition_uri_prefix = 'gs://musa5090-s26-chuwen-data/air_quality/hourly_with_sites/csv'
+);
 ```
 
 ```sql
 -- Merged Hourly + Sites — JSON-L (hive-partitioned)
+CREATE EXTERNAL TABLE `sql-project1-487819.air_quality.hourly_with_sites_jsonl`
+WITH PARTITION COLUMNS (airnow_date DATE)
+OPTIONS (
+  format = 'NEWLINE_DELIMITED_JSON',
+  uris = ['gs://musa5090-s26-chuwen-data/air_quality/hourly_with_sites/jsonl/*'],
+  hive_partition_uri_prefix = 'gs://musa5090-s26-chuwen-data/air_quality/hourly_with_sites/jsonl'
+);
 ```
 
 ```sql
 -- Merged Hourly + Sites — GeoParquet (hive-partitioned)
+CREATE EXTERNAL TABLE `sql-project1-487819.air_quality.hourly_with_sites_geoparquet`
+WITH PARTITION COLUMNS (airnow_date DATE)
+OPTIONS (
+  format = 'PARQUET',
+  uris = ['gs://musa5090-s26-chuwen-data/air_quality/hourly_with_sites/geoparquet/*'],
+  hive_partition_uri_prefix = 'gs://musa5090-s26-chuwen-data/air_quality/hourly_with_sites/geoparquet'
+);
 ```
 
 ### 5. Choosing a Data Source
